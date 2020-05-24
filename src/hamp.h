@@ -35,10 +35,10 @@
 *
 * PD2 - IN PULL UP Lo - POWER BUTTON PUSH
 * PD3 - IN PULL UP - REMOTE CONTROL
-* PD4 - OUT Lo - WM8816 CLOCK (NON INVERTED)
-* PD5 - OUT Lo - WM8816 DATA WRITE (NON INVERTED)
-* PD6 - OUT Lo - WM8816 CSL (NON INVERTED)
-* PD7 - OUT Lo - WM8816 CSL (NON INVERTED)
+* PD4 - OUT Lo - WM8816 CLOCK (DEFAULT NON INVERTED)
+* PD5 - OUT Lo - WM8816 DATA WRITE (DEFAULT NON INVERTED)
+* PD6 - OUT Lo - WM8816 CSL (DEFAULT NON INVERTED)
+* PD7 - OUT Lo - WM8816 CSL (DEFAULT NON INVERTED)
 *
 */
 
@@ -121,5 +121,36 @@ static inline void asm_wait_us(uint16_t count);
 void wait_ms(uint16_t time);
 
 #define wait_us(us) asm_wait_us((uint16_t)(((((us) * 1000L) / (1000000000 / F_CPU)) - 1) / 4))
+
+// WM8816 MACROS
+#ifndef WM8816_INVERT
+
+  // Lo ON ATMEL = Lo ON WM8816
+  #define IC_MUTE_Lo IC_MUTE_P &= ~IC_MUTE_O;
+  #define IC_MUTE_Hi IC_MUTE_P |= IC_MUTE_O;
+  #define IC_CLOCK_Lo IC_CLOCK_P &= ~IC_CLOCK_O;
+  #define IC_CLOCK_Hi IC_CLOCK_P |= IC_CLOCK_O;
+  #define IC_DATA_Lo IC_DATA_P &= ~IC_DATA_O;
+  #define IC_DATA_Hi IC_DATA_P |= IC_DATA_O;
+  #define IC_CSL_Lo IC_CS_P &= ~IC_CS_O_LEFT;
+  #define IC_CSL_Hi IC_CS_P |= IC_CS_O_LEFT;
+  #define IC_CSR_Lo IC_CS_P &= ~IC_CS_O_RIGHT;
+  #define IC_CSR_Hi IC_CS_P |= IC_CS_O_RIGHT;
+
+#else
+
+  // Lo ON ATMEL = Hi ON WM8816
+  #define IC_MUTE_Lo IC_MUTE_P |= IC_MUTE_O;
+  #define IC_MUTE_Hi IC_MUTE_P &= ~IC_MUTE_O;
+  #define IC_CLOCK_Lo IC_CLOCK_P |= IC_CLOCK_O;
+  #define IC_CLOCK_Hi IC_CLOCK_P &= ~IC_CLOCK_O;
+  #define IC_DATA_Lo IC_DATA_P |= IC_DATA_O;
+  #define IC_DATA_Hi IC_DATA_P &= ~IC_DATA_O;
+  #define IC_CSL_Lo IC_CS_P |= IC_CS_O_LEFT;
+  #define IC_CSL_Hi IC_CS_P &= ~IC_CS_O_LEFT;
+  #define IC_CSR_Lo IC_CS_P |= IC_CS_O_RIGHT;
+  #define IC_CSR_Hi IC_CS_P &= ~IC_CS_O_RIGHT;
+
+#endif
 
 #endif
