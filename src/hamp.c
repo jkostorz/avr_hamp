@@ -29,13 +29,14 @@
 #include "wm8816.h"
 
 // MAIN
-int16_t main(void) {
+int16_t main(void)
+{
 
 	// --- STANDBY MODE ---
 
 	// WATCHDOG SETUP TO 15MS
 	wdt_reset();
-	wdt_enable( WDTO_15MS );
+	wdt_enable(WDTO_15MS);
 
 	// PORTS SETUP - PULLUP
 	PORTB = ENCODER_I_A | ENCODER_I_B | SUPPLY_WATCHDOG_I_POS | SUPPLY_WATCHDOG_I_NEG | SWITCH_MUTE_I;
@@ -51,30 +52,34 @@ int16_t main(void) {
 	PORTC |= RELEY_HEADPHONES_O | LED_MUTE_O | LED_YELLOW_O;
 
 	// DEFINE UNUSED PORTS - ATMEGA328P DATASHEET RECOMMENDATION
-	PORTC |= ( 1 << 4 );
-	PORTD |= ( 1 << 0 ) || ( 1 << 1 );
+	PORTC |= (1 << 4);
+	PORTD |= (1 << 0) || (1 << 1);
 
 	// DISABLE UNUSED PERIPHERIALS - ATMEGA328P DATASHEET RECOMMENDATION
-	ACSR |= ( 1 << ACD );
-	PRR |= ( 1 << PRTWI | 1 << PRTIM2 | 1 << PRTIM0 | 1 << PRTIM1 | 1 << PRSPI | 1 << PRUSART0 | 1 << PRADC );
+	ACSR |= (1 << ACD);
+	PRR |= (1 << PRTWI | 1 << PRTIM2 | 1 << PRTIM0 | 1 << PRTIM1 | 1 << PRSPI | 1 << PRUSART0 | 1 << PRADC);
 
 	// WAIT IF POWER BUTTON IS PRESSED
-	while(!( SWITCH_POWER_P & SWITCH_POWER_I )) wdt_reset();
+	while (!(SWITCH_POWER_P & SWITCH_POWER_I))
+		wdt_reset();
 
 	// STANDBY LOOP
 	uint8_t pwm = 0;
-	while(1) {
+	while (1)
+	{
 
 		// POWER LED PWM
-		pwm = pwm ==  19 ? 0 : pwm + 1;
-		if (pwm) LED_POWER_P |= LED_POWER_O;
-		else LED_POWER_P &= ~LED_POWER_O;
+		pwm = pwm == 19 ? 0 : pwm + 1;
+		if (pwm)
+			LED_POWER_P |= LED_POWER_O;
+		else
+			LED_POWER_P &= ~LED_POWER_O;
 
 		// CHECK FOR PRESS POWER BUTTON
-		if(!( SWITCH_POWER_P & SWITCH_POWER_I)) break;
+		if (!(SWITCH_POWER_P & SWITCH_POWER_I))
+			break;
 
 		wdt_reset();
-
 	}
 
 	// --- STARTUP MODE ---
@@ -86,10 +91,15 @@ int16_t main(void) {
 	LED_MUTE_P &= ~LED_MUTE_O;
 
 	// WAIT TO RELEASE BUTTONS
-	while(!( SWITCH_POWER_P & SWITCH_POWER_I ) || !( SWITCH_MUTE_P & SWITCH_MUTE_I )) wdt_reset();
+	while (!(SWITCH_POWER_P & SWITCH_POWER_I) || !(SWITCH_MUTE_P & SWITCH_MUTE_I))
+		wdt_reset();
 
 	// SET LOGIC LOW ON WM8816 DIGITAL PINS BEFORE POWER ON ANALOG PART - DATASHEET RECOMMENDATION
-	IC_MUTE_Lo; IC_CLOCK_Lo; IC_DATA_Lo; IC_CSL_Lo; IC_CSR_Lo;
+	IC_MUTE_Lo;
+	IC_CLOCK_Lo;
+	IC_DATA_Lo;
+	IC_CSL_Lo;
+	IC_CSR_Lo;
 
 	// POWER ON TO ANALOG PART
 	RELEY_SUPPLY_P |= RELEY_SUPPLY_O;
@@ -98,7 +108,8 @@ int16_t main(void) {
 	wait_ms(1000);
 
 	// CHECK FOR POSITIVE AND NEGATIVE VOLTAGE
-	if(( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS ) | ( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG )) {
+	if ((SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS) | (SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG))
+	{
 
 		// ERROR - HIGH RISK OF EQUIPMENT DAMAGE
 
@@ -115,12 +126,13 @@ int16_t main(void) {
 		LED_YELLOW_P &= ~LED_YELLOW_O;
 
 		// WAIT FOR REMOVE POWER PLUG - NEVER ENDING LOOP
-		while(1) wdt_reset();
-
+		while (1)
+			wdt_reset();
 	}
 
 	// CHECK HEADPHONE CONNECT OTHERWISE GO TO STANDBY
-	if(!( SWITCH_HEADPHONES_P & SWITCH_HEADPHONES_I )) {
+	if (!(SWITCH_HEADPHONES_P & SWITCH_HEADPHONES_I))
+	{
 
 		// POWER OFF FOR ANALOG PART
 		RELEY_SUPPLY_P &= ~RELEY_SUPPLY_O;
@@ -129,19 +141,24 @@ int16_t main(void) {
 		wait_ms(2000);
 
 		// GO TO STANDBY
-		while(1);
-
+		while (1)
+			;
 	}
 
 	// SET LOGIC HI ON DIGITAL PINS OF WM8816 AFTER POWER UP
-	IC_CLOCK_Hi; IC_DATA_Hi; IC_CSL_Hi; IC_CSR_Hi;
+	IC_CLOCK_Hi;
+	IC_DATA_Hi;
+	IC_CSL_Hi;
+	IC_CSR_Hi;
 
 	// LOAD SAVED VOLUME LEVEL
-	uint8_t u8_volume_ee = ee_read_byte( EEPROM_VOLUME );
+	uint8_t u8_volume_ee = ee_read_byte(EEPROM_VOLUME);
 
 	// CHECK IF VOLUME LOADED FROM EEPROM IS SAFE FOR USER
-	if(u8_volume_ee > VOLUME_SAFE) u8_volume_ee = VOLUME_SAFE;
-	if(u8_volume_ee < VOLUME_MIN) u8_volume_ee = VOLUME_MIN;
+	if (u8_volume_ee > VOLUME_SAFE)
+		u8_volume_ee = VOLUME_SAFE;
+	if (u8_volume_ee < VOLUME_MIN)
+		u8_volume_ee = VOLUME_MIN;
 
 	// TURN OFF MUTE LED
 	LED_MUTE_P |= LED_MUTE_O;
@@ -150,34 +167,40 @@ int16_t main(void) {
 	IC_MUTE_Hi;
 
 	// WRITE COMMAND TO WM8816 - SET VOLUME TO VOLUME_MIN
-	func_ic_send(( IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8 ) | VOLUME_MIN );
+	func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | VOLUME_MIN);
 
 	// CONNECT HEADPHONES
 	RELEY_HEADPHONES_P &= ~RELEY_HEADPHONES_O;
 
 	// SMOOTH SETUP VOLUME
 	uint8_t u8_volume = VOLUME_MIN;
-	while( u8_volume < u8_volume_ee ) {
+	while (u8_volume < u8_volume_ee)
+	{
 
 		// SPEEDUP VOLUME CHANGE
-		if( u8_volume < 128 && u8_volume < u8_volume_ee ) u8_volume++;
-		if( u8_volume < 64 && u8_volume < u8_volume_ee ) u8_volume++;
-		if( u8_volume < 32 && u8_volume < u8_volume_ee ) u8_volume++;
-		if( u8_volume < 16 && u8_volume < u8_volume_ee ) u8_volume++;
-		if( u8_volume < 8 && u8_volume < u8_volume_ee ) u8_volume++;
-		if( u8_volume < 4 && u8_volume < u8_volume_ee ) u8_volume++;
+		if (u8_volume < 128 && u8_volume < u8_volume_ee)
+			u8_volume++;
+		if (u8_volume < 64 && u8_volume < u8_volume_ee)
+			u8_volume++;
+		if (u8_volume < 32 && u8_volume < u8_volume_ee)
+			u8_volume++;
+		if (u8_volume < 16 && u8_volume < u8_volume_ee)
+			u8_volume++;
+		if (u8_volume < 8 && u8_volume < u8_volume_ee)
+			u8_volume++;
+		if (u8_volume < 4 && u8_volume < u8_volume_ee)
+			u8_volume++;
 		u8_volume++;
 
 		// WRITE COMMAND TO WM8816
-		func_ic_send(( IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8 ) | u8_volume );
+		func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 
 		// SLOWDOWN VOLUME RAMP
 		wait_ms(2);
-
 	}
 
 	// INIT ENCODER STATE
-	uint8_t u8_encoder = ( ENCODER_I_B | ENCODER_I_B );
+	uint8_t u8_encoder = (ENCODER_I_B | ENCODER_I_B);
 
 	// VALUE TO RESTORE WHEN UNMUTE
 	uint8_t u8_volume_mute = 0;
@@ -185,13 +208,15 @@ int16_t main(void) {
 	// --- LISTENING MODE ---
 
 	// MAIN LOOP
-	while(1) {
+	while (1)
+	{
 
 		// WATCHDOG RESET
-		wdt_reset( );
+		wdt_reset();
 
 		// CHECK FOR POSITIVE AND NEGATIVE VOLTAGE
-		if(( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS ) | ( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG )) {
+		if ((SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS) | (SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG))
+		{
 
 			// ERROR - HIGH RISK OF EQUIPMENT DAMAGE
 
@@ -211,79 +236,94 @@ int16_t main(void) {
 			LED_YELLOW_P &= ~LED_YELLOW_O;
 
 			// WAIT FOR REMOVE POWER PLUG - NEVER ENDING LOOP
-			while(1) wdt_reset();
-
+			while (1)
+				wdt_reset();
 		}
 
 		// CHECK MUTE PUTTON PUSH
-		if(!( SWITCH_MUTE_P & SWITCH_MUTE_I )) {
+		if (!(SWITCH_MUTE_P & SWITCH_MUTE_I))
+		{
 
 			// CONTACT VIBRATIONS TIME
 			wait_ms(25);
 
 			// WAIT FOR RELEASE SWITCH AND CHECK FOR POSITIVE AND NEGATIVE VOLTAGE
-			while(!( SWITCH_MUTE_P & SWITCH_MUTE_I ) && !( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS ) && !( SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG )) wdt_reset();
+			while (!(SWITCH_MUTE_P & SWITCH_MUTE_I) && !(SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS) && !(SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG))
+				wdt_reset();
 
 			// CONTACT VIBRATIONS TIME
 			wait_ms(25);
 
 			// SAVE OR RESTORE VOLUME AND SET MUTE OR UNMUTE
-			if(!u8_volume_mute) {
+			if (!u8_volume_mute)
+			{
 				u8_volume_mute = u8_volume;
 				u8_volume = VOLUME_MIN;
 				LED_MUTE_P &= ~LED_MUTE_O;
-			} else {
+			}
+			else
+			{
 				u8_volume = u8_volume_mute;
 				u8_volume_mute = 0;
 				LED_MUTE_P |= LED_MUTE_O;
 			}
-				// UPDATE WM8816 GAIN REGISTER
-				func_ic_send( ( IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8 ) | u8_volume );
+			// UPDATE WM8816 GAIN REGISTER
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 		}
 
 		// CHECK ENCODER MOVE
-		if((u8_encoder & 0b11) != (( ENCODER_P & ENCODER_I_B ) | ( ENCODER_P & ENCODER_I_A )) >> 1) {
+		if ((u8_encoder & 0b11) != ((ENCODER_P & ENCODER_I_B) | (ENCODER_P & ENCODER_I_A)) >> 1)
+		{
 
 			// MOVE PREVIOUS STATE BITS LEFT AND ADD ADD NEW STATE
-			u8_encoder = (u8_encoder << 2) | ((( ENCODER_P & ENCODER_I_B ) | ( ENCODER_P & ENCODER_I_A )) >> 1);
+			u8_encoder = (u8_encoder << 2) | (((ENCODER_P & ENCODER_I_B) | (ENCODER_P & ENCODER_I_A)) >> 1);
 
 			// CHECK ENCODER MOVE RIGHT - HH HL LL LH HH... ( PIN B | PIN A )
-			if (u8_volume < ( VOLUME_HIGH - VOLUME_STEP + 1 ) && u8_encoder == 0b10000111) u8_volume += VOLUME_STEP;
+			if (u8_volume < (VOLUME_HIGH - VOLUME_STEP + 1) && u8_encoder == 0b10000111)
+				u8_volume += VOLUME_STEP;
 
 			// CHECK ENCODER MOVE LEFT - HH LH LL HL HH...
-			if (u8_volume > ( VOLUME_MIN + VOLUME_STEP - 1 ) && u8_encoder == 0b01001011) u8_volume -= VOLUME_STEP;
+			if (u8_volume > (VOLUME_MIN + VOLUME_STEP - 1) && u8_encoder == 0b01001011)
+				u8_volume -= VOLUME_STEP;
 
 			// RESTORE VOLUME IF UNMUTED
-			if(u8_volume_mute) {
+			if (u8_volume_mute)
+			{
 				u8_volume = u8_volume_mute;
 				u8_volume_mute = 0;
 				LED_MUTE_P |= LED_MUTE_O;
 			}
 
 			// UPDATE WM8816 GAIN REGISTER
-			func_ic_send( ( IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8 ) | u8_volume );
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 
 			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
-			if (u8_volume > VOLUME_SAFE) LED_YELLOW_P &= ~LED_YELLOW_O;
-			else LED_YELLOW_P |= LED_YELLOW_O;
-
+			if (u8_volume > VOLUME_SAFE)
+				LED_YELLOW_P &= ~LED_YELLOW_O;
+			else
+				LED_YELLOW_P |= LED_YELLOW_O;
 		}
 
-		// DEBUGMODE - CHECK ENCODER WORKING
-		#ifdef _DEBUGMODE_
+// DEBUGMODE - CHECK ENCODER WORKING
+#ifdef _DEBUGMODE_
 
-			// INPUT A ON LED YELLOW
-			if(( ENCODER_P & ENCODER_I_A )) LED_YELLOW_P &= ~LED_YELLOW_O;
-			else LED_YELLOW_P |= LED_YELLOW_O;
+		// INPUT A ON LED YELLOW
+		if ((ENCODER_P & ENCODER_I_A))
+			LED_YELLOW_P &= ~LED_YELLOW_O;
+		else
+			LED_YELLOW_P |= LED_YELLOW_O;
 
-			// INPUT B ON LED MUTE
-			if(( ENCODER_P & ENCODER_I_B )) LED_MUTE_P &= ~LED_MUTE_O;
-			else LED_MUTE_P |= LED_MUTE_O;
+		// INPUT B ON LED MUTE
+		if ((ENCODER_P & ENCODER_I_B))
+			LED_MUTE_P &= ~LED_MUTE_O;
+		else
+			LED_MUTE_P |= LED_MUTE_O;
 
-		#endif
+#endif
 
 		// CHECK FOR PRESS POWER BUTTON
-		if(!( SWITCH_POWER_P & SWITCH_POWER_I ))  {
+		if (!(SWITCH_POWER_P & SWITCH_POWER_I))
+		{
 
 			// --- GO TO STANDBY MODE ---
 
@@ -309,26 +349,27 @@ int16_t main(void) {
 			RELEY_SUPPLY_P &= ~RELEY_SUPPLY_O;
 
 			// SAVE VOLUME TO EEPROM
-			if(u8_volume_mute) u8_volume = u8_volume_mute;
-			ee_write_byte( EEPROM_VOLUME, u8_volume );
+			if (u8_volume_mute)
+				u8_volume = u8_volume_mute;
+			ee_write_byte(EEPROM_VOLUME, u8_volume);
 
-		// WAIT FOR DISCHARGE CAPACITORS
-		wait_ms(2000);
+			// WAIT FOR DISCHARGE CAPACITORS
+			wait_ms(2000);
 
 			// GO TO STANDBY
-			while( 1 );
-
+			while (1)
+				;
 		}
-	
 	}
-
 }
 
 // SEND DATA TO WM8816
-void func_ic_send(uint16_t data) {
+void func_ic_send(uint16_t data)
+{
 
 	// FOR READ BYTE FROM CHIP ALL DATA BITS MUST BY SET TO LOGIC HI
-	if(data & 0b0000010000000000) data |= 0b11111111;
+	if (data & 0b0000010000000000)
+		data |= 0b11111111;
 
 	// PULL DOWN CLOCK FOR LONG TIME BEFORE TRANSMISION
 	IC_CLOCK_Lo;
@@ -337,14 +378,18 @@ void func_ic_send(uint16_t data) {
 
 	// CHIP SELECT IN THE MIDDLE OF CLOCK HI
 	wait_us(IC_WM8816_CLOCK_TIME / 2);
-	IC_CSL_Lo; IC_CSR_Lo;
+	IC_CSL_Lo;
+	IC_CSR_Lo;
 	wait_us(IC_WM8816_CLOCK_TIME / 2);
 
 	// CLOCK CYCLE LO + SET BIT A7 + CLOCK CYCLE HI
-	if(data & 0b1000000000000000){
+	if (data & 0b1000000000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -353,10 +398,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A6 + CLOCK CYCLE HI
-	if(data & 0b0100000000000000){
+	if (data & 0b0100000000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -365,10 +413,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A5 + CLOCK CYCLE HI
-	if(data & 0b0010000000000000){
+	if (data & 0b0010000000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -377,10 +428,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A4 + CLOCK CYCLE HI
-	if(data & 0b0001000000000000){
+	if (data & 0b0001000000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -389,10 +443,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A3 + CLOCK CYCLE HI
-	if(data & 0b0000100000000000){
+	if (data & 0b0000100000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -401,10 +458,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A2 + CLOCK CYCLE HI
-	if(data & 0b0000010000000000){
+	if (data & 0b0000010000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -413,10 +473,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A1 + CLOCK CYCLE HI
-	if(data & 0b0000001000000000){
+	if (data & 0b0000001000000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -425,10 +488,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT A0 + CLOCK CYCLE HI
-	if(data & 0b0000000100000000){
+	if (data & 0b0000000100000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -437,10 +503,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D7 + CLOCK CYCLE HI
-	if(data & 0b0000000010000000){
+	if (data & 0b0000000010000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -449,10 +518,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D6 + CLOCK CYCLE HI
-	if(data & 0b0000000001000000){
+	if (data & 0b0000000001000000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -461,10 +533,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D5 + CLOCK CYCLE HI
-	if(data & 0b0000000000100000){
+	if (data & 0b0000000000100000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -473,10 +548,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D4 + CLOCK CYCLE HI
-	if(data & 0b0000000000010000){
+	if (data & 0b0000000000010000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -485,10 +563,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D3 + CLOCK CYCLE HI
-	if(data & 0b0000000000001000){
+	if (data & 0b0000000000001000)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -497,10 +578,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D2 + CLOCK CYCLE HI
-	if(data & 0b0000000000000100){
+	if (data & 0b0000000000000100)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -509,10 +593,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D1 + CLOCK CYCLE HI
-	if(data & 0b0000000000000010){
+	if (data & 0b0000000000000010)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -521,10 +608,13 @@ void func_ic_send(uint16_t data) {
 	wait_us(IC_WM8816_CLOCK_TIME);
 
 	// CLOCK CYCLE LO + SET BIT D0 + CLOCK CYCLE HI
-	if(data & 0b0000000000000001){
+	if (data & 0b0000000000000001)
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Hi;
-	}else{
+	}
+	else
+	{
 		IC_CLOCK_Lo;
 		IC_DATA_Lo;
 	}
@@ -534,7 +624,8 @@ void func_ic_send(uint16_t data) {
 
 	// CLOCK CYCLE LO + CHIP UNSELECT + CLOCK CYCLE HI
 	IC_CLOCK_Lo;
-	IC_CSL_Hi; IC_CSR_Hi;
+	IC_CSL_Hi;
+	IC_CSR_Hi;
 	wait_us(IC_WM8816_CLOCK_TIME);
 	IC_CLOCK_Hi;
 
@@ -543,52 +634,53 @@ void func_ic_send(uint16_t data) {
 
 	// SET DATA PIN LOGIC HI
 	IC_DATA_Hi;
-
 }
 
 // EEPROM READ BYTE
-uint8_t ee_read_byte( uint8_t addr ){
+uint8_t ee_read_byte(uint8_t addr)
+{
 
-	while( EECR & ( 1 << EEPE ) )
+	while (EECR & (1 << EEPE))
 		wdt_reset();
 	EEAR = addr;
-	EECR |= ( 1 << EERE );
+	EECR |= (1 << EERE);
 	return EEDR;
-
 }
 
 // EEPROM WRITE BYTE
-void ee_write_byte( uint8_t addr, uint8_t data ){
+void ee_write_byte(uint8_t addr, uint8_t data)
+{
 
-	while( EECR & ( 1 << EEPE ) )
+	while (EECR & (1 << EEPE))
 		wdt_reset();
 	EEAR = addr;
 	EEDR = data;
-	EECR |= ( 1 << EEMPE );
-	EECR |= ( 1 << EEPE );
-
+	EECR |= (1 << EEMPE);
+	EECR |= (1 << EEPE);
 }
 
-	// DELAY FUNCTIONS
+// DELAY FUNCTIONS
 
-	static inline void asm_wait_us(uint16_t count){\
-		asm volatile ("cp %A0, __zero_reg__ \n\t"\
-			"cpc %B0, __zero_reg__ \n\t"\
-			"breq loop_out_%= \n\t"\
-			"loop%=: \n\t"\
-			"sbiw %0, 1 \n\t"\
-			"brne loop%= \n\t"\
-			"loop_out_%=: \n\t"\
-			 : "=w" (count)
-			 : "0" (count)
-		);
-	}
+static inline void asm_wait_us(uint16_t count)
+{
+	asm volatile("cp %A0, __zero_reg__ \n\t"
+							 "cpc %B0, __zero_reg__ \n\t"
+							 "breq loop_out_%= \n\t"
+							 "loop%=: \n\t"
+							 "sbiw %0, 1 \n\t"
+							 "brne loop%= \n\t"
+							 "loop_out_%=: \n\t"
+							 : "=w"(count)
+							 : "0"(count));
+}
 
-	void wait_ms(uint16_t time){
-		while (time--){
-			wait_us(1000);
-			#if defined(_AVR_WDT_H_)
-			wdt_reset();
-			#endif
-		}
+void wait_ms(uint16_t time)
+{
+	while (time--)
+	{
+		wait_us(1000);
+#if defined(_AVR_WDT_H_)
+		wdt_reset();
+#endif
 	}
+}
