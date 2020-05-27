@@ -305,7 +305,7 @@ int16_t main(void)
 				wdt_reset();
 		}
 
-		// CHECK MUTE PUTTON PUSH
+		// CHECK MUTE BUTTON PUSH
 		if (!(SWITCH_MUTE_P & SWITCH_MUTE_I))
 		{
 
@@ -369,28 +369,20 @@ int16_t main(void)
 				LED_YELLOW_P |= LED_YELLOW_O;
 		}
 
-		// CHECK MUTE PUTTON PUSH
-		if (remotecontrol == 0b0000000000001101)
+		// CHECK REMOTE CONTROL CODES - MUTE BUTTON
+		if (u8_volume_mute == 0 && remotecontrol == 0b0000000000001101)
 		{
 
-			// SAVE OR RESTORE VOLUME AND SET MUTE OR UNMUTE
-			if (!u8_volume_mute)
-			{
-				u8_volume_mute = u8_volume;
-				u8_volume = VOLUME_MIN;
-				LED_MUTE_P &= ~LED_MUTE_O;
-			}
-			else
-			{
-				u8_volume = u8_volume_mute;
-				u8_volume_mute = 0;
-				LED_MUTE_P |= LED_MUTE_O;
-			}
+			// SAVE VOLUME AND SET MUTE
+			u8_volume_mute = u8_volume;
+			u8_volume = VOLUME_MIN;
+			LED_MUTE_P &= ~LED_MUTE_O;
+
 			// UPDATE WM8816 GAIN REGISTER
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 		}
 
-		// CHANGE VOLUME - CHECK REMOTE CONTROL CODES
+		// CHECK REMOTE CONTROL CODES - VOLUME UP
 		if (remotecontrol == 0b0000000000010000)
 		{
 			if (u8_volume < VOLUME_HIGH)
@@ -414,7 +406,7 @@ int16_t main(void)
 				LED_YELLOW_P |= LED_YELLOW_O;
 		}
 
-		// CHANGE VOLUME - CHECK REMOTE CONTROL CODES
+		// CHECK REMOTE CONTROL CODES - VOLUME DOWN
 		if (remotecontrol == 0b0000000000010001)
 		{
 			if (u8_volume > VOLUME_MIN)
