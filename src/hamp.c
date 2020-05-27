@@ -826,9 +826,11 @@ ISR(INT1_vect)
 	if (!(remotecontrol))
 	{
 
+		// TURN OFF POWER LED
 		LED_POWER_P |= LED_POWER_O;
+
 		// WAIT FOR RC6 START BIT + MODE BIT + MODE BIT + MODE BIT + TOGGLE BIT + THREE FOURTH OF FIRST ADRESS BIT ___--_-_-_--__
-		wait_us(8890 + 666);
+		wait_us((RC6_PULSE_TIME * 5) + RC6_PULSE_TIME + RC6_PULSE_TIME + RC6_PULSE_TIME + (RC6_PULSE_TIME * 2) + (RC6_PULSE_TIME * 3 / 4));
 
 		// READ ADRESS AND COMMAND
 		uint8_t i;
@@ -841,7 +843,9 @@ ISR(INT1_vect)
 				remotecontrol |= 1;
 
 			// WAIT FOR NEXT BIT
-			wait_us(889);
+			wait_us(RC6_PULSE_TIME);
+
+			// WATCHDOG RESET
 			wdt_reset();
 		}
 	}
@@ -849,6 +853,7 @@ ISR(INT1_vect)
 	// WATCHDOG RESET
 	wdt_reset();
 
+	//TURN ON POWER LED
 	LED_POWER_P &= ~LED_POWER_O;
 
 	sei();

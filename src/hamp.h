@@ -116,8 +116,10 @@ uint8_t EEMEM e8_volume = VOLUME_MIN;
 #define IC_CS_O_LEFT (1 << 6)
 #define IC_CS_O_RIGHT (1 << 7)
 
-// DECLARATIONS
+// RC6 TIMNG
+#define RC6_PULSE_TIME 889
 
+// DECLARATIONS
 void func_ic_send(uint16_t data);
 uint8_t ee_read_byte(uint8_t addr);
 void ee_write_byte(uint8_t addr, uint8_t data);
