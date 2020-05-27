@@ -379,7 +379,7 @@ int16_t main(void)
 			LED_MUTE_P &= ~LED_MUTE_O;
 
 			// UPDATE WM8816 GAIN REGISTER
-			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | VOLUME_MIN);
 		}
 
 		// CHECK REMOTE CONTROL CODES - VOLUME UP
