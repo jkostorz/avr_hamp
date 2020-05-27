@@ -18,15 +18,17 @@
 
 //#define WM8816_INVERT
 
-//#define _DEBUGMODE_
-
 #include <avr/eeprom.h>
+#include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/wdt.h>
 
 #include "hamp.h"
 
 #include "wm8816.h"
+
+// REMOTE CONTROL GLOBAL VARIABLE
+uint16_t remotecontrol = 0;
 
 // MAIN
 int16_t main(void)
@@ -53,15 +55,20 @@ int16_t main(void)
 
 	// DEFINE UNUSED PORTS - ATMEGA328P DATASHEET RECOMMENDATION
 	PORTC |= (1 << 4);
-	PORTD |= (1 << 0) || (1 << 1);
+	PORTD |= (1 << 0) | (1 << 1);
 
 	// DISABLE UNUSED PERIPHERIALS - ATMEGA328P DATASHEET RECOMMENDATION
 	ACSR |= (1 << ACD);
-	PRR |= (1 << PRTWI | 1 << PRTIM2 | 1 << PRTIM0 | 1 << PRTIM1 | 1 << PRSPI | 1 << PRUSART0 | 1 << PRADC);
+	PRR |= (1 << PRTWI) | (1 << PRTIM2) | (1 << PRTIM0) | (1 << PRTIM1) | (1 << PRSPI) | (1 << PRUSART0) | (1 << PRADC);
 
 	// WAIT IF POWER BUTTON IS PRESSED
 	while (!(SWITCH_POWER_P & SWITCH_POWER_I))
 		wdt_reset();
+
+	// SETUP INTERRUPS FOR REMOTE CONTROL
+	EICRA |= 1 << ISC11;
+	EIMSK |= 1 << INT1;
+	sei();
 
 	// STANDBY LOOP
 	uint8_t pwm = 0;
@@ -79,7 +86,65 @@ int16_t main(void)
 		if (!(SWITCH_POWER_P & SWITCH_POWER_I))
 			break;
 
+		// WATCHDOG RESET
 		wdt_reset();
+
+// DEBUGMODE - CHECK WORKING INFRARED RECEIVER
+#ifdef _DEBUGMODE_IR_
+
+		// CHECK FOR NEW REMOTE CONTROL CODE
+		if (remotecontrol)
+		{
+
+			// DISPLAY BITS
+			uint16_t i = 0;
+			for (i = 0; i < 16; i++)
+			{
+
+				// TURN OFF LEDS
+				LED_MUTE_P |= LED_MUTE_O;
+				LED_YELLOW_P |= LED_YELLOW_O;
+				wait_ms(440);
+
+				// PAUSE BETWEEN ADRESS AND COMMAND
+				if (i == 8)
+					wait_ms(1000);
+
+				// Lo ON YELLOW LED Hi ON MUTE LED
+				if (remotecontrol & 0b1000000000000000)
+					LED_MUTE_P &= ~LED_MUTE_O;
+				else
+					LED_YELLOW_P &= ~LED_YELLOW_O;
+
+				remotecontrol = remotecontrol << 1;
+
+				wait_ms(60);
+			}
+
+			// TURN OFF LEDS
+			LED_MUTE_P |= LED_MUTE_O;
+			LED_YELLOW_P |= LED_YELLOW_O;
+
+			// PAUSE AFTER END DISPLAY
+			wait_ms(1000);
+
+			// NEXT CODE ACCEPTED
+			remotecontrol = 0;
+		}
+
+#endif
+
+		// CHECK FOR PRESS POWER BUTTON IN REMOTE CONTROL
+		if (remotecontrol == 0b0000000000001100)
+		{
+			wait_ms(300);
+			remotecontrol = 0;
+			break;
+		}
+
+		// CLEAR REMOTE CONTROL VARIABLE
+		if (remotecontrol)
+			remotecontrol = 0;
 	}
 
 	// --- STARTUP MODE ---
@@ -271,7 +336,7 @@ int16_t main(void)
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 		}
 
-		// CHECK ENCODER MOVE
+		// CHANGE VOLUME - CHECK ENCODER MOVE
 		if ((u8_encoder & 0b11) != ((ENCODER_P & ENCODER_I_B) | (ENCODER_P & ENCODER_I_A)) >> 1)
 		{
 
@@ -304,17 +369,86 @@ int16_t main(void)
 				LED_YELLOW_P |= LED_YELLOW_O;
 		}
 
+		// CHECK MUTE PUTTON PUSH
+		if (remotecontrol == 0b0000000000001101)
+		{
+
+			// SAVE OR RESTORE VOLUME AND SET MUTE OR UNMUTE
+			if (!u8_volume_mute)
+			{
+				u8_volume_mute = u8_volume;
+				u8_volume = VOLUME_MIN;
+				LED_MUTE_P &= ~LED_MUTE_O;
+			}
+			else
+			{
+				u8_volume = u8_volume_mute;
+				u8_volume_mute = 0;
+				LED_MUTE_P |= LED_MUTE_O;
+			}
+			// UPDATE WM8816 GAIN REGISTER
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
+		}
+
+		// CHANGE VOLUME - CHECK REMOTE CONTROL CODES
+		if (remotecontrol == 0b0000000000010000)
+		{
+			if (u8_volume < VOLUME_HIGH)
+				u8_volume += 1;
+
+			// RESTORE VOLUME IF UNMUTED
+			if (u8_volume_mute)
+			{
+				u8_volume = u8_volume_mute;
+				u8_volume_mute = 0;
+				LED_MUTE_P |= LED_MUTE_O;
+			}
+
+			// UPDATE WM8816 GAIN REGISTER
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
+
+			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
+			if (u8_volume > VOLUME_SAFE)
+				LED_YELLOW_P &= ~LED_YELLOW_O;
+			else
+				LED_YELLOW_P |= LED_YELLOW_O;
+		}
+
+		// CHANGE VOLUME - CHECK REMOTE CONTROL CODES
+		if (remotecontrol == 0b0000000000010001)
+		{
+			if (u8_volume > VOLUME_MIN)
+				u8_volume -= 1;
+
+			// RESTORE VOLUME IF UNMUTED
+			if (u8_volume_mute)
+			{
+				u8_volume = u8_volume_mute;
+				u8_volume_mute = 0;
+				LED_MUTE_P |= LED_MUTE_O;
+			}
+
+			// UPDATE WM8816 GAIN REGISTER
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
+
+			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
+			if (u8_volume > VOLUME_SAFE)
+				LED_YELLOW_P &= ~LED_YELLOW_O;
+			else
+				LED_YELLOW_P |= LED_YELLOW_O;
+		}
+
 // DEBUGMODE - CHECK ENCODER WORKING
-#ifdef _DEBUGMODE_
+#ifdef _DEBUGMODE_ENCODER_
 
 		// INPUT A ON LED YELLOW
-		if ((ENCODER_P & ENCODER_I_A))
+		if (ENCODER_P & ENCODER_I_A)
 			LED_YELLOW_P &= ~LED_YELLOW_O;
 		else
 			LED_YELLOW_P |= LED_YELLOW_O;
 
 		// INPUT B ON LED MUTE
-		if ((ENCODER_P & ENCODER_I_B))
+		if (ENCODER_P & ENCODER_I_B)
 			LED_MUTE_P &= ~LED_MUTE_O;
 		else
 			LED_MUTE_P |= LED_MUTE_O;
@@ -322,7 +456,7 @@ int16_t main(void)
 #endif
 
 		// CHECK FOR PRESS POWER BUTTON
-		if (!(SWITCH_POWER_P & SWITCH_POWER_I))
+		if (!(SWITCH_POWER_P & SWITCH_POWER_I) || remotecontrol == 0b0000000000001100)
 		{
 
 			// --- GO TO STANDBY MODE ---
@@ -360,6 +494,10 @@ int16_t main(void)
 			while (1)
 				;
 		}
+
+		// CLEAR REMOTE CONTROL VARIABLE
+		if (remotecontrol)
+			remotecontrol = 0;
 	}
 }
 
@@ -683,4 +821,43 @@ void wait_ms(uint16_t time)
 		wdt_reset();
 #endif
 	}
+}
+
+// EXTERNAL INTERRUPTION INT1
+ISR(INT1_vect)
+{
+
+	// TURN OFF INTERRUPS
+	cli();
+
+	// CHECK IF PREVOIUS COMMAND IS DONE
+	if (!(remotecontrol))
+	{
+
+		LED_POWER_P |= LED_POWER_O;
+		// WAIT FOR RC6 START BIT + MODE BIT + MODE BIT + MODE BIT + TOGGLE BIT + THREE FOURTH OF FIRST ADRESS BIT ___--_-_-_--__
+		wait_us(8890 + 666);
+
+		// READ ADRESS AND COMMAND
+		uint8_t i;
+		for (i = 0; i < 16; i++)
+		{
+			remotecontrol <<= 1;
+
+			// CHECK STATE ON THREE FOURTH OF BIT TIME
+			if (REMOTE_P & REMOTE_I)
+				remotecontrol |= 1;
+
+			// WAIT FOR NEXT BIT
+			wait_us(889);
+			wdt_reset();
+		}
+	}
+
+	// WATCHDOG RESET
+	wdt_reset();
+
+	LED_POWER_P &= ~LED_POWER_O;
+
+	sei();
 }

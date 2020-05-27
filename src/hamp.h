@@ -98,6 +98,10 @@ uint8_t EEMEM e8_volume = VOLUME_MIN;
 #define RELEY_HEADPHONES_P PORTC
 #define RELEY_HEADPHONES_O (1 << 1)
 
+// INFRARED RECEIVER
+#define REMOTE_P PIND
+#define REMOTE_I (1 << 3)
+
 // WM8816
 #define IC_MUTE_P PORTC
 #define IC_MUTE_O (1 << 3)
