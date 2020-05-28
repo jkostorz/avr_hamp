@@ -116,7 +116,7 @@ uint8_t EEMEM e8_volume = VOLUME_MIN;
 #define IC_CS_O_LEFT (1 << 6)
 #define IC_CS_O_RIGHT (1 << 7)
 
-// RC6 TIMNG
+// RC6 TIMING
 #define RC6_PULSE_TIME 889
 
 // DECLARATIONS
