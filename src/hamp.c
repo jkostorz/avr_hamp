@@ -345,12 +345,20 @@ int16_t main(void)
 			u8_encoder = (u8_encoder << 2) | (((ENCODER_P & ENCODER_I_B) | (ENCODER_P & ENCODER_I_A)) >> 1);
 
 			// CHECK ENCODER MOVE RIGHT - HH HL LL LH HH... ( PIN B | PIN A )
-			if (u8_volume < (VOLUME_HIGH - VOLUME_STEP + 1) && u8_encoder == 0b10000111)
+			if (u8_volume < VOLUME_HIGH && u8_encoder == 0b10000111)
+			{
+				if (u8_volume > VOLUME_HIGH - VOLUME_STEP)
+					u8_volume = VOLUME_HIGH;
 				u8_volume += VOLUME_STEP;
+			}
 
 			// CHECK ENCODER MOVE LEFT - HH LH LL HL HH...
-			if (u8_volume > (VOLUME_MIN + VOLUME_STEP - 1) && u8_encoder == 0b01001011)
+			if (u8_volume > VOLUME_MIN && u8_encoder == 0b01001011)
+			{
+				if (u8_volume < VOLUME_MIN + VOLUME_STEP)
+					u8_volume = VOLUME_MIN;
 				u8_volume -= VOLUME_STEP;
+			}
 
 			// RESTORE VOLUME IF UNMUTED
 			if (u8_volume_mute)
