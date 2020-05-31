@@ -135,7 +135,7 @@ int16_t main(void)
 #endif
 
 		// CHECK FOR PRESS POWER BUTTON IN REMOTE CONTROL
-		if (remotecontrol == 0b0000000000001100)
+		if (remotecontrol == 0b0000000000001100 || remotecontrol == 0b0000000001101110)
 		{
 			wait_ms(300);
 			remotecontrol = 0;
@@ -457,7 +457,7 @@ int16_t main(void)
 #endif
 
 		// CHECK FOR PRESS POWER BUTTON
-		if (!(SWITCH_POWER_P & SWITCH_POWER_I) || remotecontrol == 0b0000000000001100)
+		if (!(SWITCH_POWER_P & SWITCH_POWER_I) || remotecontrol == 0b0000000000001100 || remotecontrol == 0b0000000001101101)
 		{
 
 			// --- GO TO STANDBY MODE ---
