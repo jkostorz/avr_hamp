@@ -306,35 +306,17 @@ int16_t main(void)
 		}
 
 		// CHECK MUTE BUTTON PUSH
-		if (!(SWITCH_MUTE_P & SWITCH_MUTE_I))
+		if (!(SWITCH_MUTE_P & SWITCH_MUTE_I) && !u8_volume_mute)
 		{
 
-			// CONTACT VIBRATIONS TIME
-			wait_ms(25);
-
-			// WAIT FOR RELEASE SWITCH AND CHECK FOR POSITIVE AND NEGATIVE VOLTAGE
-			while (!(SWITCH_MUTE_P & SWITCH_MUTE_I) && !(SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_POS) && !(SUPPLY_WATCHDOG_P & SUPPLY_WATCHDOG_I_NEG))
-				wdt_reset();
-
-			// CONTACT VIBRATIONS TIME
-			wait_ms(25);
-
-			// SAVE OR RESTORE VOLUME AND SET MUTE OR UNMUTE
-			if (!u8_volume_mute)
-			{
-				u8_volume_mute = u8_volume;
-				u8_volume = VOLUME_MIN;
-				LED_MUTE_P &= ~LED_MUTE_O;
-			}
-			else
-			{
-				u8_volume = u8_volume_mute;
-				u8_volume_mute = 0;
-				LED_MUTE_P |= LED_MUTE_O;
-			}
+			// SAVE VOLUME AND SET MUTE
+			u8_volume_mute = u8_volume;
+			u8_volume = VOLUME_MIN;
+			LED_MUTE_P &= ~LED_MUTE_O;
+			LED_YELLOW_P |= LED_YELLOW_O;
 
 			// UPDATE WM8816 GAIN REGISTER
-			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
+			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | VOLUME_MIN);
 		}
 
 		// CHANGE VOLUME - CHECK ENCODER MOVE
@@ -363,7 +345,7 @@ int16_t main(void)
 			// RESTORE VOLUME IF UNMUTED
 			if (u8_volume_mute)
 			{
-				u8_volume = u8_volume_mute;
+				u8_volume = u8_volume_mute > VOLUME_SAFE ? VOLUME_SAFE : u8_volume_mute;
 				u8_volume_mute = 0;
 				LED_MUTE_P |= LED_MUTE_O;
 			}
@@ -372,7 +354,7 @@ int16_t main(void)
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 
 			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
-			if (u8_volume > VOLUME_SAFE)
+			if (u8_volume > VOLUME_SAFE && !u8_volume_mute)
 				LED_YELLOW_P &= ~LED_YELLOW_O;
 			else
 				LED_YELLOW_P |= LED_YELLOW_O;
@@ -386,6 +368,7 @@ int16_t main(void)
 			u8_volume_mute = u8_volume;
 			u8_volume = VOLUME_MIN;
 			LED_MUTE_P &= ~LED_MUTE_O;
+			LED_YELLOW_P |= LED_YELLOW_O;
 
 			// UPDATE WM8816 GAIN REGISTER
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | VOLUME_MIN);
@@ -400,7 +383,7 @@ int16_t main(void)
 			// RESTORE VOLUME IF UNMUTED
 			if (u8_volume_mute)
 			{
-				u8_volume = u8_volume_mute;
+				u8_volume = u8_volume_mute > VOLUME_SAFE ? VOLUME_SAFE : u8_volume_mute;
 				u8_volume_mute = 0;
 				LED_MUTE_P |= LED_MUTE_O;
 			}
@@ -409,7 +392,7 @@ int16_t main(void)
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 
 			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
-			if (u8_volume > VOLUME_SAFE)
+			if (u8_volume > VOLUME_SAFE && !u8_volume_mute)
 				LED_YELLOW_P &= ~LED_YELLOW_O;
 			else
 				LED_YELLOW_P |= LED_YELLOW_O;
@@ -424,7 +407,7 @@ int16_t main(void)
 			// RESTORE VOLUME IF UNMUTED
 			if (u8_volume_mute)
 			{
-				u8_volume = u8_volume_mute;
+				u8_volume = u8_volume_mute > VOLUME_SAFE ? VOLUME_SAFE : u8_volume_mute;
 				u8_volume_mute = 0;
 				LED_MUTE_P |= LED_MUTE_O;
 			}
@@ -433,7 +416,7 @@ int16_t main(void)
 			func_ic_send((IC_WM8816_BOTH_CHANNEL_GAINS_WRITE << 8) | u8_volume);
 
 			// TURN ON YELLOW LED IF VOLUME IS UPPER VOLUME_SAFE
-			if (u8_volume > VOLUME_SAFE)
+			if (u8_volume > VOLUME_SAFE && !u8_volume_mute)
 				LED_YELLOW_P &= ~LED_YELLOW_O;
 			else
 				LED_YELLOW_P |= LED_YELLOW_O;
