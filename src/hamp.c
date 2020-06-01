@@ -265,7 +265,7 @@ int16_t main(void)
 	}
 
 	// INIT ENCODER STATE
-	uint8_t u8_encoder = (ENCODER_I_B | ENCODER_I_B);
+	uint8_t u8_encoder = (((ENCODER_P & ENCODER_I_B) | (ENCODER_P & ENCODER_I_A)) >> 1);
 
 	// VALUE TO RESTORE WHEN UNMUTE
 	uint8_t u8_volume_mute = 0;
