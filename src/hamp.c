@@ -24,7 +24,7 @@
 #include <avr/wdt.h>
 
 #include "hamp.h"
-
+#include "remote.h"
 #include "wm8816.h"
 
 // REMOTE CONTROL GLOBAL VARIABLE
@@ -135,7 +135,7 @@ int16_t main(void)
 #endif
 
 		// CHECK FOR PRESS POWER BUTTON IN REMOTE CONTROL
-		if (remotecontrol == 0b0000000000001100 || remotecontrol == 0b0000000001101110)
+		if (remotecontrol == RC_POWER_TOGGLE || remotecontrol == RC_POWER_ON)
 		{
 			wait_ms(300);
 			remotecontrol = 0;
@@ -361,7 +361,7 @@ int16_t main(void)
 		}
 
 		// CHECK REMOTE CONTROL CODES - MUTE BUTTON
-		if (u8_volume_mute == 0 && remotecontrol == 0b0000000000001101)
+		if (u8_volume_mute == 0 && remotecontrol == RC_MUTE)
 		{
 
 			// SAVE VOLUME AND SET MUTE
@@ -375,7 +375,7 @@ int16_t main(void)
 		}
 
 		// CHECK REMOTE CONTROL CODES - VOLUME UP
-		if (remotecontrol == 0b0000000000010000)
+		if (remotecontrol == RC_VOLUME_UP)
 		{
 			if (u8_volume < VOLUME_HIGH)
 				u8_volume += 1;
@@ -399,7 +399,7 @@ int16_t main(void)
 		}
 
 		// CHECK REMOTE CONTROL CODES - VOLUME DOWN
-		if (remotecontrol == 0b0000000000010001)
+		if (remotecontrol == RC_VOLUME_DOWN)
 		{
 			if (u8_volume > VOLUME_MIN)
 				u8_volume -= 1;
@@ -440,7 +440,7 @@ int16_t main(void)
 #endif
 
 		// CHECK FOR PRESS POWER BUTTON
-		if (!(SWITCH_POWER_P & SWITCH_POWER_I) || remotecontrol == 0b0000000000001100 || remotecontrol == 0b0000000001101101)
+		if (!(SWITCH_POWER_P & SWITCH_POWER_I) || remotecontrol == RC_POWER_TOGGLE || remotecontrol == RC_POWER_OFF)
 		{
 
 			// --- GO TO STANDBY MODE ---
