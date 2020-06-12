@@ -1,0 +1,9 @@
+{
+  "upload": {
+    "maximum_ram_size": 2048,
+    "maximum_size": 32768
+  },
+  "name": "HAMP_ATMEGA328P",
+  "url": "https://github.com/jkostorz/avr_hamp",
+  "vendor": "Janusz Kostorz"
+}
